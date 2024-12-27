@@ -32,7 +32,7 @@ if tokenizer:
     Tokenizer = functions.loadCheckpoint(Tokenizer, None, pathOrigin + "/models/" + "tokenizer")
     Tokenizer = Tokenizer.to(device)
 
-modelName = "LSTMAttentionWithTemperatureLSTMCNN_Little"
+modelName = "LSTMAttention_model5"
 #model = ConvLSTM.ConvLSTMPredictor([64, 64, 24, 24, 64, 24]).to(device)
 model = lstmAttention2_temp.LSTM(1,1, 2500, 2500, 0.1, 5,  device).to(device)
 #model = LSTM.LSTM(3,3, 2500, 2500, 0.1, 5,  device).to(device)
@@ -47,12 +47,12 @@ model = functions.loadCheckpoint(model, None, os.path.join(pathOrigin, "models",
 print("loading models finished")
 
 # get dataLoaders
-path_images = os.path.join(pathOrigin, "datasets", name, "alignedAveragedDataNDSIPatched")
-path_temperatures= os.path.join(pathOrigin, "datasets", name, "TemperatureDataPatched")
+path_images = os.path.join(pathOrigin, "datasets", name, "Test", "alignedAveragedDataNDSIPatched")
+path_temperatures= os.path.join(pathOrigin, "datasets", name, "Test", "TemperatureDataPatched")
 # dataLoader /home/jonas/datasets/parbati
-datasetTest = gl(path_images, path_temperatures, "val")
+datasetTest = gl(path_images, path_temperatures, "test")
 #datasetTest = datasetClasses.glaciers("/home/jonas/datasets/parbati", "test", bootstrap = True)
-dataTest = DataLoader(datasetTest,256,  shuffle = False)
+dataTest = DataLoader(datasetTest, 256,  shuffle = False)
 
 
 with torch.no_grad():
@@ -67,14 +67,20 @@ with torch.no_grad():
         MSElosses = torch.zeros(len(dataTest))
         MAElosses = torch.zeros(len(dataTest))
         counter = 0
+        
 
         # check model performance on bootstrapped testset
         for inpts, targets , temps, idx in dataTest:
 
             inpts = inpts.to(device).float()
             targets = targets.to(device).float().squeeze()
+            print(inpts.size())
+            print(targets.size())
+            print(len(temps))
+            print(type(temps))
             temperatures=[]
             for t in temps:
+                print(t.size())
                 temperatures.append(t.to(device).float())
 
             if tokenizer:
@@ -92,7 +98,7 @@ with torch.no_grad():
                 forward = torch.reshape(forward, (1, forward.size(0), 50, 50))
 
             
-            if inpts.size(0) <0:
+            if True:
                 for i in range(forward.size(0)):
                     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
                     # plot numpy arrays forward and target next to each other in the same plot in gray scale
@@ -106,7 +112,7 @@ with torch.no_grad():
                     plt.savefig("nIteration" + str(b) + "_" + str(counter) + "_" + str(i)+ ".jpeg")
                     plt.close()
 
-            
+            #print(forward)
 
             # get loss
             MSE = MSELoss(forward, targets)
@@ -162,10 +168,10 @@ with torch.no_grad():
                 axs[1, i].set_title('Target ' + str(i))
                 #axis off
                 axs[1, i].axis('off')
-            #save the plt plot to a jpeg file without displaying it
-            os.chdir(os.path.join(pathOrigin, "prints",modelName))
-            plt.savefig("Plot_total.jpeg")
-            plt.close()
+        #save the plt plot to a jpeg file without displaying it
+        os.chdir(os.path.join(pathOrigin, "prints",modelName))
+        plt.savefig("Plot_total.jpeg")
+        plt.close()
 
             #
         MSE = torch.mean(MSElosses)

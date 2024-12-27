@@ -140,8 +140,7 @@ class LSTM(nn.Module):
         out = torch.stack(out, dim = 1)
         out = out.reshape(out.size(dim = 0), out.size(dim = 1), 50, 50)
 
-        # Clip the output to be in the range [0, 1]
-        out = torch.clamp(out, 0, 1)
+        
 
         return out
 
@@ -152,6 +151,9 @@ class LSTM(nn.Module):
         s = self.encoder(x)
         y = self.flatten(y)
         output = self.decoder(s, temperatures, y, training)
+
+        # Clip the output to be in the range [0, 1]
+        #output = torch.clamp(output, min=0, max=1)
 
         return output
 

@@ -24,12 +24,16 @@ def groupdata():
         for j in range(len(data)):
             dataj = data[j]
             time = datetime.strptime(dataj[0], '%Y-%m-%dT%H:%M:%SZ')
-            data[j] = [time,dataj[1]]
+            #fill nan values with the interpolation of the neighboors
+            data[j] = [time,np.array(dataj[1])]
 
             if np.isnan(data[j][1]).any():
+                print("time: ", time)
+                print("Nan values found in the data")
+                print(np.array(dataj[1]))
                 flaged_nan.append(time)
 
-        year = data[10][0].year
+        year = data[5][0].year
 
         for j in range(len(data)):
             dataj = data[j]
@@ -84,6 +88,7 @@ def groupdata():
                     monthsData.append(info[b][1])
 
             monthsData = np.concatenate(monthsData, axis=0)
+            print(monthsData.shape)
             listOfList.append(monthsDelta)
             listOfListInd.append(monthsDeltaInd)
             dataGroup.append([year,monthsDelta,monthsData])
@@ -133,11 +138,13 @@ def automatePatching(data, patchSize, stride):
 
 if __name__ == "__main__":
     #For Getting Images
-    bands = ['LST_Day_1km', 'LST_Night_1km']
-    dataAPI.getYearlyData(years, boundingBox, clouds, allowedMissings, name, bands, "Temperatures")
+    #bands = ['LST_Day_1km', 'LST_Night_1km']
+    bands = ['LST_Day_1km']
+    #dataAPI.getYearlyData(years, boundingBox, clouds, allowedMissings, name, bands, "Temperatures")
+    
     groupdata()
-
-
+    sys.exit(1)
+    
     # load data
     currentPath = os.path.join(path, "datasets", name, "TemperatureData")
     os.chdir(currentPath)

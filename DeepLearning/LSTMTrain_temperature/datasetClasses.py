@@ -57,21 +57,10 @@ class glaciers(Dataset):
 
         if self.mode == "test":
             # get list of all image paths in directory
-            images = os.listdir(os.path.join(self.path, "images"))
-            paths = [os.path.join(os.path.join(self.path, "images"), item) for item in images]
-            criterion = round(len(paths) * 0.8)
-            paths = paths[criterion:]
-            self.images = paths
-
-            targets = os.listdir(os.path.join(self.path, "targets"))
-            paths = [os.path.join(os.path.join(self.path, "targets"), item) for item in targets]
-            paths = paths[criterion:]
-            self.targets = paths
-
-            temperatures = os.listdir(os.path.join(self.path_temperatures, "images"))
-            paths = [os.path.join(os.path.join(self.path, "images"), item) for item in temperatures]
-            paths = paths[criterion:]
-            self.temperatures = paths
+            criterion = round(len(paths) * 0) # cero because i want to test all
+            self.images = self.images[criterion:]
+            self.targets = self.targets[criterion:]
+            self.temperatures = self.temperatures[criterion:]
 
 
     def __len__(self):
@@ -95,6 +84,7 @@ class glaciers(Dataset):
             #inpt = inpt[:, 2, :, :]
             target = functions.openData(self.targets[idx])
             temperature = functions.openData(self.temperatures[idx])  # load temperature data
+            
         except:
             # get data in tensor format
             index = np.random.randint(self.__len__())

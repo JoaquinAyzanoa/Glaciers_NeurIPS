@@ -534,7 +534,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
     trainCounter = 0
     valLoss = torch.zeros(1)
     val_loss = 0
-    alpha_fourier = 0.1
+    alpha_fourier = 1e-6
     # WandB
     if WandB:
         wandb.init(
@@ -571,7 +571,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
     ###################### start training #############################
 
     for b in range(params["epochs"]):
-        for inpts, targets , temps in trainLoader:
+        for inpts, targets , temps, idx in trainLoader:
             
             # use tokenizer on gpu
             model.train()
@@ -586,9 +586,16 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
             
             # forward + backward + optimize
             forward = model.forward(inpts, temperatures, targets, training = True)
+            #print("forward: ", forward)
             loss = criterion(forward, targets)  # add reconstruction loss
-            penalty = high_frequency_penalty(forward)
-            total_loss = loss + alpha_fourier*penalty
+            regulatization = alpha_fourier*high_frequency_penalty(forward,device)
+            #regulatization = total_variation_loss(forward)
+            #print values of loss and penalty
+            #print("loss: ", loss.detach().cpu().item(), " penalty: ", regulatization.detach().cpu().item())
+            total_loss = loss + regulatization
+            if torch.isnan(total_loss):
+                print("NaN detected in loss, skipping backward pass")
+                continue
             total_loss.backward()
             torch.nn.utils.clip_grad_value_(model.parameters(), clip_value=3.0) # gradient clipping; no exploding gradient
             optimizer.step()
@@ -601,7 +608,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
                     val_loss = 0
                     len_loss = 10
                     for i in range(len_loss):
-                        x, y, temps = next(iter(valLoader))
+                        x, y, temps, idx = next(iter(valLoader))
                         x = x.to(device).float()
                         y = y.to(device).float()
                         temperatures=[]
@@ -634,7 +641,8 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
                 os.chdir(pathOrigin)
 
             # print loss
-            print("epoch: ", b, ", example: ", trainCounter, " current loss = ", loss.detach().cpu().item())
+            print("epoch: ", b, ", example: ", trainCounter, " current loss = ", loss.detach().cpu().item(),
+                  "regulatization loss = ", regulatization.detach().cpu().item())
 
 
     # save results of gradient descent
@@ -649,15 +657,28 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
     return
 
 
-def high_frequency_penalty(output):
+def high_frequency_penalty(output,device):
     # Compute the Fourier transform of the output
     fft_output = torch.fft.fft2(output)
+    
     # Compute the magnitude of the Fourier coefficients
     magnitude = torch.abs(fft_output)
+    # Add a small epsilon to avoid NaNs
+    #magnitude = magnitude + 1e-8
     # Penalize high-frequency components
-    penalty = torch.mean(magnitude)
+    penalty = torch.sum(magnitude[:, :, 25:, 25:])
+    #print("penalty: ", penalty)
+    if torch.isnan(penalty):
+        penalty = torch.tensor([0.0]).to(device)
     return penalty
 
+def total_variation_loss(x):
+    """
+    Calculate the total variation loss which penalizes high-frequency components.
+    """
+    loss = torch.sum(torch.abs(x[:, :, :-1] - x[:, :, 1:])) + torch.sum(torch.abs(x[:, :-1, :] - x[:, 1:, :]))
+    print("total_variation_loss: ", loss)
+    return loss
 
 
 def getPatches(tensor, patchSize, stride=50):
@@ -1070,7 +1091,7 @@ def fullSceneLoss(inputScenes, inputDates, targetScenes, targetDates,
     outputDimensions: tuple
         dimensions of output scenes
     device: string
-        on which device is tensor calculated
+        machine to be used
     training: boolean
         inference?
     test: boolean

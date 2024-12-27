@@ -32,19 +32,19 @@ def interpolate_expand(vector):
     target_shape = (data2.shape[1],data2.shape[2])
     for i in range(d):
         data = vector[i]
-
-        # Convert the array to a DataFrame for easier manipulation
-        df = pd.DataFrame(data)
-
-        # Interpolate NaN values based on their surroundings
-        df_interpolated = df.interpolate(method='linear', axis=1).interpolate(method='linear', axis=0)
-
-        # Convert back to NumPy array if needed
-        data = df_interpolated.to_numpy()
+        #Replace nan values with an interporlation of the neighbors
+        if np.isnan(data).any():
+            # Convert the array to a DataFrame for easier manipulation
+            df = pd.DataFrame(data)
+            # Interpolate NaN values based on their surroundings
+            df = df.interpolate(method='linear', axis=1, limit_direction='both')
+            df = df.interpolate(method='linear', axis=0, limit_direction='both')
+            # Convert back to NumPy array if needed
+            data = df.to_numpy()
 
         # Calculate the zoom factors for each axis
         zoom_factors = (target_shape[0] / data.shape[0], target_shape[1] / data.shape[1])
-        print('original data shape: ', data.shape, 'zoom: ', zoom_factors)
+        #print('original data shape: ', data.shape, 'zoom: ', zoom_factors)
         # Use zoom to resize and interpolate the array
         #print('data: ', data-273)
         expanded_array = zoom(data, zoom_factors, order=3)
@@ -118,23 +118,23 @@ def getData_Temperatures(bbox, bands, timeRange, cloudCoverage, allowedMissings)
     print("proj:geometry", output["y"])
 
     dataList = []
+    times_saved = []
     for i in range(t):
-        if i%2==0:
+        if time[i] not in times_saved:
             if cloud[0][i] == True:  # check for clouds
-                if np.count_nonzero(np.isnan(output[i, 1, :, :])) >= round(
-                    (output.shape[2] * output.shape[3]) * allowedMissings):  # check for many nans
+                if np.count_nonzero(np.isnan(output[i, 0, :, :])) >= round(
+                    (output.shape[-2] * output.shape[-1]) * allowedMissings):  # check for many nans
                     pass
-                elif np.count_nonzero(np.isnan(output[i, 1, :, :])) <= round(
-                            (output.shape[2] * output.shape[3]) * allowedMissings):
-                        data = array([np.array(output[i, 0, :, :]), # get seven bands of the satellite sensors
-                                    np.array(output[i, 1, :, :])
-                                    ])
-                        data = interpolate_expand(data)
-                        print(time[i])
-                        cloudCov = cloud[1][i]
-                        data = (time[i], data, cloudCov)
-                        
-                        dataList.append(data)
+                elif np.count_nonzero(np.isnan(output[i, 0, :, :])) <= round(
+                    (output.shape[-2] * output.shape[-1]) * allowedMissings):
+                    data = np.array(output[i, :, :, :]) # get seven bands of the satellite sensors
+                    data = interpolate_expand(data)
+                    print(time[i])
+                    cloudCov = cloud[1][i]
+                    data = (time[i], data, cloudCov)
+                    times_saved.append(time[i])
+                    dataList.append(data)
+    print("End with information size of: ", len(dataList))
     return dataList
 
 def getData_Images(bbox, bands, timeRange, cloudCoverage, allowedMissings):

@@ -193,7 +193,7 @@ def getTrainTest(patches, window, inputBands, outputBands):
 
     return None
 
-def getTrainTemperatures(patches, window, inputBands, outputBands):
+def  getTrainTemperatures(patches, window, inputBands, outputBands):
     """
     converts patches to image data for deep learning models
 
