@@ -88,7 +88,9 @@ def groupdata():
                     monthsData.append(info[b][1])
 
             monthsData = np.concatenate(monthsData, axis=0)
-            print(monthsData.shape)
+            
+            #keep only the last 10 datapoints to make the data more uniform
+            monthsData = monthsData[-10:]
             listOfList.append(monthsDelta)
             listOfListInd.append(monthsDeltaInd)
             dataGroup.append([year,monthsDelta,monthsData])
@@ -99,6 +101,7 @@ def groupdata():
         os.chdir(os.path.join(path, "datasets", name, "TemperatureData"))
         with open(str(i), "wb") as fp:
             pickle.dump(dataGroup[i][2], fp)
+            print("Temperature data saved ", dataGroup[i][2].shape)
         
 
 
@@ -141,9 +144,7 @@ if __name__ == "__main__":
     #bands = ['LST_Day_1km', 'LST_Night_1km']
     bands = ['LST_Day_1km']
     #dataAPI.getYearlyData(years, boundingBox, clouds, allowedMissings, name, bands, "Temperatures")
-    
     groupdata()
-    sys.exit(1)
     
     # load data
     currentPath = os.path.join(path, "datasets", name, "TemperatureData")

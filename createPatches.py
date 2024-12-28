@@ -224,13 +224,18 @@ def  getTrainTemperatures(patches, window, inputBands, outputBands):
         ## take next n scenes
         x = patches[i:i + window]
         y = patches[i + window: i + (2 * window)]
-
+        print("x shape: ", x[0].shape)
         for z in range(x[0].shape[0]):
+
             xHelper = [torch.from_numpy(x[0][z]), torch.from_numpy(x[1][z]),
                         torch.from_numpy(x[2][z]), torch.from_numpy(x[3][z])]
             
             yHelper = [torch.from_numpy(y[0][z]), torch.from_numpy(y[1][z]),
                         torch.from_numpy(y[2][z]), torch.from_numpy(y[3][z])]
+
+            #modify xHelper and yHelper to have the same shape of lenght for temperature data
+            xHelper = torch.cat(xHelper, dim=0)
+            yHelper = torch.cat(yHelper, dim=0)
 
             # just save images and targets in folder
             # input

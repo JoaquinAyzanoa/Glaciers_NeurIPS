@@ -19,5 +19,5 @@ maxIterations = 10000
 
 # if patches are extracted 
 patchSize = 50
-stride = 10
+stride = 20
 sequenceLength = 4
