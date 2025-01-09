@@ -10,9 +10,8 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from config import * 
+import ConvLSTM
 
-from datasetClasses import glaciers
-import lstmAttention3
 ## global variables for project
 ### change here to run on cluster ####
 pathOrigin = path
@@ -21,18 +20,12 @@ pathOrigin = path
 device = "cuda"
 tokenizer = False
 
-if tokenizer:
-    # load tokenizer and model
-    Tokenizer = tokenizer.tokenizer()
-    os.chdir(pathOrigin + "/models")
-    Tokenizer = functions.loadCheckpoint(Tokenizer, None, pathOrigin + "/models/" + "tokenizer")
-    Tokenizer = Tokenizer.to(device)
 
-modelName = "LSTMAttention3_model1_filter"
+modelName = "ConvLSTMBig2_6months"
 #Create forlder to save prints
 os.makedirs(os.path.join(pathOrigin, "prints",modelName), exist_ok=True)
 #model = ConvLSTM.ConvLSTMPredictor([64, 64, 24, 24, 64, 24]).to(device)
-model = lstmAttention3.LSTM(1,1, 2500, 2500, 0.1, 5,  device).to(device)
+model = ConvLSTM.ConvLSTMPredictor([128, 64, 32, 32, 64, 32]).to(device)
 #model = LSTM.LSTM(3,3, 2500, 2500, 0.1, 5,  device).to(device)
 #model = UNet(1,1).to(device)
 
@@ -46,9 +39,9 @@ print("loading models finished")
 
 # get dataLoaders
 path_images = os.path.join(pathOrigin, "datasets", name, "Test", "alignedAveragedDataNDSIPatched")
-path_temperatures= os.path.join(pathOrigin, "datasets", name, "Test", "TemperatureDataPatched")
 # dataLoader /home/jonas/datasets/parbati
-datasetTest = glaciers(path_images, path_temperatures, "test")
+datasetTest = datasetClasses.glaciers(path_images, "test")
+
 #datasetTest = datasetClasses.glaciers("/home/jonas/datasets/parbati", "test", bootstrap = True)
 dataTest = DataLoader(datasetTest, 256,  shuffle = False)
 
@@ -68,27 +61,16 @@ with torch.no_grad():
         
 
         # check model performance on bootstrapped testset
-        for inpts, targets , temperatures, idx in dataTest:
+        for inpts, targets , idx in dataTest:
 
             inpts = inpts.to(device).float()
             targets = targets.to(device).float().squeeze()
-            temperatures = temperatures.to(device).float()
 
-            if tokenizer:
-                # encode with tokenizer and put to gpu
-                inpts = functions.tokenizerBatch(Tokenizer, inpts, "encoding", device)
-                targets = functions.tokenizerBatch(Tokenizer, targets, "encoding", device)
 
             # predict
             model.eval()
-            forward = model.forward(inpts, temperatures, targets, training = False)
+            forward = model.forward(inpts, targets, training = False)
 
-            if tokenizer:
-                forward = Tokenizer.decoder(forward)
-                forward = functions.tokenizerBatch(Tokenizer, forward, "decoding", device)
-                forward = torch.reshape(forward, (1, forward.size(0), 50, 50))
-
-            
             if True:
                 for i in range(forward.size(0)):
                     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
@@ -143,7 +125,6 @@ with torch.no_grad():
             #save in numpy array as an image
             for i in range(f.shape[0]):
                 pred = f[i]
-                tar = z[i]
                 tar = z[i]
                 #save numpy array as an image
                 plt.imsave(os.path.join(pathOrigin, "prints",modelName, "Prediction_" + str(i)+ ".jpeg"), pred, cmap='gray')

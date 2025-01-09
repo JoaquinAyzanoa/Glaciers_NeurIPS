@@ -13,7 +13,7 @@ device = "cuda"
 #device = "cpu"
 
 #Model Name
-modelName = "LSTMAttention3_model1"
+modelName = "LSTMAttention3_model1_filter"
 # args:args: lstmLayersEnc, lstmLayersDec, lstmHiddenSize, lstmInputSize, dropout, attentionHeads, device
 model = lstmAttention3.LSTM(1,1, 2500, 2500, 0.1, 5,  device).to(device)
 #model = lstmAttention3.LSTM(3,3, 2500, 2500, 0.1, 5,  device).to(device)
@@ -22,7 +22,7 @@ model = lstmAttention3.LSTM(1,1, 2500, 2500, 0.1, 5,  device).to(device)
 #model = functions.loadCheckpoint(model, None, os.path.join(pathOrigin, "models", modelName))
 
 # define hyperparameters
-params = {"learningRate": 0.0001, "weightDecay": 0.01, "epochs": 10, "batchSize": 16, "optimizer": "adam", "validationStep": 100}
+params = {"learningRate": 0.0001, "weightDecay": 0.001, "epochs": 20, "batchSize": 64, "optimizer": "adam", "validationStep": 100}
 
 
 
@@ -38,10 +38,10 @@ datasetVal = datasetClasses.glaciers(path_images, path_temperatures, "val")
 dataVal = DataLoader(datasetVal, params["batchSize"], shuffle = True)
 
 # criterion
-loss = torch.nn.MSELoss()
-#loss = torch.nn.L1Loss()
+#loss = torch.nn.MSELoss()
+loss = torch.nn.L1Loss()
 
-
+print('params', params)
 # train on patches
 ## args: trainLoader, valLoader, tokenizer, model, criterion, loadModel, modelName, params,  WandB, device, pathOrigin = pathOrigin
-functions.trainLoop(dataTrain, dataVal,  model, loss, False, modelName, params, False, device)
+functions.trainLoop(dataTrain, dataVal,  model, loss, True, modelName, params, False, device)

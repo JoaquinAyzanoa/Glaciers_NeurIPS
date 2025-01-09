@@ -9,3 +9,4 @@ Jupyter
 ipyleaflet
 wandb
 rioxarray
+opensimplex

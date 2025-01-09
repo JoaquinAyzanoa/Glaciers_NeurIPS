@@ -105,6 +105,7 @@ class LSTM(nn.Module):
             for i in range(4):
                 # Transform current state to query
                 query = self.query_transform(outputEnc[:, -1:, :])  # Use last timestep as query
+                #use the last timestep as query
                 # Use encoder output as key and value
                 x, _ = self.attention(query, outputEnc, outputEnc)
                 x = self.flattenDec(x)

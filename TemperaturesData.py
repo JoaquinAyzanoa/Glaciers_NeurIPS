@@ -90,7 +90,10 @@ def groupdata():
             monthsData = np.concatenate(monthsData, axis=0)
             
             #keep only the last 10 datapoints to make the data more uniform
-            monthsData = monthsData[-10:]
+            #by 2 steps in 2 steps, lets say -20, -18, -16, -14, -12, -10, -8, -6, -4, -2
+            points = [0,2,4,6,8,10,12,14,16,18]
+            #monthsData = monthsData[-10:]
+            monthsData = monthsData[points]
             listOfList.append(monthsDelta)
             listOfListInd.append(monthsDeltaInd)
             dataGroup.append([year,monthsDelta,monthsData])

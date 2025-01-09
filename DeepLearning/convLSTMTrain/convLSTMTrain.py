@@ -18,7 +18,7 @@ model = ConvLSTM.ConvLSTMPredictor([128, 64, 32, 32, 64, 32]).to(device)
 #model = ConvLSTM.ConvLSTMPredictor([2, 2, 2, 2, 2, 2]).to(device)
 
 # define hyperparameters
-params = {"learningRate": 0.0001, "weightDecay": 0.001, "epochs": 20, "batchSize": 8, "optimizer": "adam", "validationStep": 100}
+params = {"learningRate": 0.0001, "weightDecay": 0.001, "epochs": 20, "batchSize": 45, "optimizer": "adam", "validationStep": 100}
 
 
 # get dataLoaders
@@ -35,4 +35,4 @@ loss = torch.nn.MSELoss()
 
 # train on patches
 ## args: trainLoader, valLoader, tokenizer, model, criterion, loadModel, modelName, params,  WandB, device, pathOrigin = pathOrigin
-functions.trainLoop(dataTrain, dataVal,  model, loss, False, "ConvLSTMBig", params, True, device)
+functions.trainLoop(dataTrain, dataVal,  model, loss, False, "ConvLSTMBig2_6months", params, False, device)

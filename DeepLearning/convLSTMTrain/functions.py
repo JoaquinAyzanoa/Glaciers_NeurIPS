@@ -601,6 +601,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
                         valLoss = criterion(pred, y)
                         val_loss += valLoss.detach().cpu().item()
                     val_loss = val_loss/len_loss
+                    print("validation loss: ", val_loss)
 
 
 

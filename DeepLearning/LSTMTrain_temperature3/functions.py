@@ -534,7 +534,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
     trainCounter = 0
     valLoss = torch.zeros(1)
     val_loss = 0
-    alpha_fourier = 1e-6
+    alpha_fourier = 1e-7
     # WandB
     if WandB:
         wandb.init(
@@ -587,17 +587,15 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
             forward = model.forward(inpts, temperatures, targets, training = True)
             #print("forward: ", forward)
             loss = criterion(forward, targets)  # add reconstruction loss
-            regulatization = alpha_fourier*high_frequency_penalty(forward,device)
-            #regulatization = total_variation_loss(forward)
+            #regularization = alpha_fourier*high_frequency_penalty(forward,device)
+            regularization = alpha_fourier*total_variation_loss(forward)
             #print values of loss and penalty
             #print("loss: ", loss.detach().cpu().item(), " penalty: ", regulatization.detach().cpu().item())
-            total_loss = loss + regulatization
-            if torch.isnan(total_loss):
-                print("NaN detected in loss, skipping backward pass")
-            else:
-                total_loss.backward()
-                torch.nn.utils.clip_grad_value_(model.parameters(), clip_value=3.0) # gradient clipping; no exploding gradient
-                optimizer.step()
+            total_loss = loss + regularization
+            total_loss.backward()
+            #loss.backward()
+            torch.nn.utils.clip_grad_value_(model.parameters(), clip_value=1.0) # gradient clipping; no exploding gradient
+            optimizer.step()
             #trainCounter += 1
             
             # save loss
@@ -605,7 +603,7 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
                 if trainCounter % params["validationStep"] == 0 and trainCounter != 0:
                     model.eval()
                     val_loss = 0
-                    len_loss = 10
+                    len_loss = 1
                     for i in range(len_loss):
                         x, y, temps, idx = next(iter(valLoader))
                         x = x.to(device).float()
@@ -617,10 +615,12 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
                         valLoss = criterion(pred, y)
                         val_loss += valLoss.detach().cpu().item()
                     val_loss = val_loss/len_loss
+                    print("Validation Loss: ", val_loss)
                 ## log to wandb
                 if WandB:
                     wandb.log({"trainLoss": loss.detach().cpu().item(),
                             "validationLoss": val_loss})
+                
 
                 #save for csv
                 trainLosses[trainCounter] = loss.detach().cpu().item()
@@ -639,7 +639,8 @@ def trainLoop(trainLoader, valLoader, model, criterion, loadModel, modelName, pa
 
             # print loss
             print("epoch: ", b, ", example: ", trainCounter, " current loss = ", loss.detach().cpu().item(),
-                  "regulatization loss = ", regulatization.detach().cpu().item())
+                  "regulatization loss = ", regularization.detach().cpu().item())
+            #print("epoch: ", b, ", example: ", trainCounter, " current loss = ", loss.detach().cpu().item())
 
 
     # save results of gradient descent

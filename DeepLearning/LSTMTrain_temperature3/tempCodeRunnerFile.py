@@ -1,0 +1,1 @@
+os.path.join(pathOrigin, "prints",modelName, "Prediction_" + str(i)+ ".jpeg"), pred, cmap='gray')

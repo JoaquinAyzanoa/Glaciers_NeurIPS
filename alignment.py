@@ -558,7 +558,32 @@ def main(plot = True):
     
     return None
 
+def correct_nans():
+    #get all files in the directory
+    if extractNDSI == True: 
+        #get all files in the directory
+        files = glob.glob(os.path.join(path, "datasets", name, "alignedAveragedDataNDSI", '*'))
+                
+    if extractNDSI == False: 
+        #get all files in the directory
+        files = glob.glob(os.path.join(path, "datasets", name, "alignedAveragedData", '*'))
+    
+    #open each file and chech if have nans values
+    for i in range(len(files)):
+        img = openData(files[i])
+        if np.isnan(img).any():
+            print(f"File {files[i]} has nans values")
+            #apply kernel to the image
+            img = applyToImage(img)
+            #save the image
+            with open(files[i], "wb") as fp:
+                pickle.dump(img, fp)
+            print(f"File {files[i]} has been corrected")
+        else:
+            print(f"File {files[i]} has no nans values")
+
 if __name__ == "__main__":
     main()
+    correct_nans()
     
      
